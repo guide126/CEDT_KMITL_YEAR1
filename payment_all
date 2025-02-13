@@ -1,0 +1,53 @@
+sequenceDiagram
+    actor User
+    participant PaymentSystem
+    participant Payment
+    participant PaymentMethod
+    participant QRCode
+    participant CreditCard
+
+    User ->> PaymentSystem: start payment
+    activate PaymentSystem
+    PaymentSystem ->> Payment: Create Payment Instance
+    activate Payment
+    PaymentSystem ->> PaymentMethod: processPayment()
+    activate PaymentMethod
+
+    alt User Cancels Payment
+        User ->> PaymentSystem: Cancel Payment
+        PaymentSystem ->> Payment: Check Payment Status
+        activate Payment
+        alt Payment Not Processed Yet
+            PaymentSystem -->> User: Payment Canceled
+        else Payment Already Processed
+            PaymentSystem -->> User: Can't cancel (Already Completed)
+        end
+        deactivate Payment
+    else User Changes Payment Method
+        User ->> PaymentSystem: Change Payment Method
+        PaymentSystem ->> PaymentMethod: Reset Current Payment Method
+        deactivate PaymentMethod
+        User ->> PaymentSystem: Choose New Payment Method
+        PaymentSystem ->> PaymentMethod: processPayment() (new)
+        activate PaymentMethod
+    else Payment Processing
+        par QR Code Payment
+            PaymentMethod ->> QRCode: processPayment()
+            activate QRCode
+            QRCode -->> PaymentMethod: Success/Failure
+            deactivate QRCode
+        and Credit Card Payment
+            PaymentMethod ->> CreditCard: processPayment()
+            activate CreditCard
+            CreditCard -->> PaymentMethod: Verify Payment Details
+            CreditCard -->> PaymentMethod: Success/Failure
+            deactivate CreditCard
+        end
+    end
+
+    PaymentMethod -->> Payment: Update Payment Status
+    deactivate PaymentMethod
+    Payment -->> PaymentSystem: Complete Payment (Status Updated)
+    deactivate Payment
+    PaymentSystem -->> User: Show Payment Result (Success/Failure)
+    deactivate PaymentSystem
