@@ -1,0 +1,35 @@
+sequenceDiagram
+    actor User
+    participant UI
+    participant System
+     participant member
+    participant cart_item
+    participant Order
+    participant PaymentMethod
+    participant QRCode
+    participant CreditCard
+
+    User ->> UI: กดปุ่มชำระเงิน
+    UI ->>  System:start process
+    System ->> member: User_ID
+    member ->> cart_item: order_detail
+    cart_item->> Order:get_cart_item(menu,amout)
+    Order ->> PaymentMethod: total_price
+    alt QR_CODE
+        PaymentMethod ->> QRCode: process_payment(QR_CODE)
+        activate QRCode
+        QRCode -->> PaymentMethod: return Success/Failure
+        deactivate QRCode
+    
+    else CreditCard
+        PaymentMethod ->> CreditCard: process_payment(CreditCard)
+        activate CreditCard
+       
+        CreditCard -->> PaymentMethod: return Success/Failure
+        deactivate CreditCard
+    
+    end
+   
+    PaymentMethod -->> System: Return Payment Status
+    System -->> UI: return Payment Result
+     UI-->>User:เเสดงข้อความชำระเสร็จสิ้น
